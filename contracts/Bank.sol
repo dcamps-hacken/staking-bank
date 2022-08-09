@@ -4,8 +4,9 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Bank is Ownable {
+contract Bank is Ownable, ReentrancyGuard {
     enum BankStatus {
         DEPOSIT,
         LOCK,
@@ -15,13 +16,14 @@ contract Bank is Ownable {
     }
     BankStatus public status;
 
+    address immutable token;
     uint256 immutable T;
     uint256 immutable t0;
     uint256 immutable reward;
+
     uint256 private R;
     mapping(address => uint256) public balances;
-
-    address immutable token;
+    uint256 public stake;
 
     constructor(
         uint256 _period,
@@ -32,27 +34,36 @@ contract Bank is Ownable {
         t0 = block.timestamp;
         reward = _reward;
         R = 0;
-        //IERC20(token).transfer(address(this), _amount);
         token = _token;
+        IERC20(token).transfer(address(this), reward);
     }
 
     fallback() external payable {}
 
     receive() external payable {}
 
-    function deposit(uint256 _amount) external {
+    function deposit(uint256 _amount) external nonReentrant {
         require(status == BankStatus.DEPOSIT, "Deposit period has passed!");
-        //IERC20(token).transfer(address(this), _amount);
+        IERC20(token).transfer(address(this), _amount);
         balances[msg.sender] += _amount;
+        stake += balances[msg.sender];
     }
 
-    function withdraw() external {
-        require(status != BankStatus(0) && status != BankStatus(1), "");
+    function withdraw() external nonReentrant {
+        require(
+            status != BankStatus(0) && status != BankStatus(1),
+            "Withdrawals not available yet!"
+        );
+        require(balances[msg.sender] > 0, "No tokens to withdraw!");
+        uint256 yield = R * (balances[msg.sender] / stake);
+        stake -= balances[msg.sender];
+        balances[msg.sender] = 0;
+        IERC20(token).transfer(msg.sender, balances[msg.sender] + yield);
     }
 
     function recall() external onlyOwner {
         require(status == BankStatus.THIRD_UNLOCK);
-        //require(); /* all users claimed tokens */
+        require(stake == 0);
         IERC20(token).transfer(msg.sender, R);
     }
 

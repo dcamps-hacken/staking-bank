@@ -39,11 +39,11 @@ contract Bank is Ownable, ReentrancyGuard {
     }
 
     constructor(
-        uint256 _period,
+        uint256 _interval,
         uint256 _reward,
         address _token
     ) {
-        T = _period;
+        T = _interval;
         t0 = block.timestamp;
         reward = _reward;
         R = 0;

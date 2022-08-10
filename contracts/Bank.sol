@@ -48,16 +48,19 @@ contract Bank is Ownable, ReentrancyGuard {
         reward = _reward;
         R = 0;
         token = _token;
-        IERC20(token).transfer(address(this), reward);
+        //requires owner approval
+        /* IERC20(_token).transferFrom(msg.sender, address(this), _reward); */
     }
 
+    // manage direct tokens/eth sent to the contract.
     fallback() external payable {}
 
     receive() external payable {}
 
+    //requires user approval
     function deposit(uint256 _amount) external nonReentrant checkStatus {
-        require(status == BankStatus.DEPOSIT, "Deposit period has passed!");
-        IERC20(token).transfer(address(this), _amount);
+        require(status == BankStatus.DEPOSIT, "Deposit period not active!");
+        IERC20(token).transferFrom(msg.sender, address(this), _amount);
         balances[msg.sender] += _amount;
         stake += balances[msg.sender];
         emit Deposit(msg.sender, _amount);

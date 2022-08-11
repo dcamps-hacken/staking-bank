@@ -1,5 +1,7 @@
 # Bank smart contract task
 
+## remember to check getContract vs getContractAt or whatever when dealing with ATRAC!
+
 Your task is to create a bank smart contract which will enable anyone to deposit an amount X of XYZ
 ERC20 tokens to their savings (staking) account. The bank smart contract also contains an additional
 token reward pool of R XYZ tokens, deposited to the contract by the contract owner (bank owner) at

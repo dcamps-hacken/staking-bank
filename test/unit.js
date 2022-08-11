@@ -4,8 +4,8 @@ const { ethers } = require("hardhat");
 
 describe("Wizard", function () {
   let totalSupply = constants.Zero;
-  const initialSupply = BigNumber.from("10000000000000000000000000000");
-  const minted = BigNumber.from("1000000000000000000");
+  const initialSupply = ethers.utils.parseEther("100000");
+  const minted = ethers.utils.parseEther("100");
   let deployer, user;
   beforeEach(async function () {
     await deployments.fixture(["token"]);
@@ -22,7 +22,7 @@ describe("Wizard", function () {
   describe("mint", async function () {
     it("Should mint additional tokens on demand", async function () {
       const userBalance = await wizard.balanceOf(user);
-      const mint = await wizard.mint(user, "1");
+      const mint = await wizard.mint(user, "100");
       await mint.wait(); // wait until the transaction is mined
       const newBalance = await wizard.balanceOf(user);
       const calculatedNewBalance = userBalance.add(minted);
@@ -31,13 +31,13 @@ describe("Wizard", function () {
   });
 });
 
-describe("Bank", function () {
+/* describe("Bank", function () {
   const interval = "100";
   const reward = ethers.utils.parseEther("10000");
   let deployer, user1, user2;
   beforeEach(async function () {
-    await deployments.fixture(["all"]);
-    bank = await ethers.getContract("Bank");
+    await deployments.fixture(["bank"]);
+    bank = await ethers.getContract("all");
     wizard = await ethers.getContract("Wizard");
     deployer = (await getNamedAccounts()).deployer;
     user1 = (await getNamedAccounts()).user1;
@@ -45,9 +45,8 @@ describe("Bank", function () {
   });
   describe("constructor", async function () {
     it("sends reward tokens to the contract", async function () {
-      await wizard.approve(bank.address);
-      /* const rewardTokens = await wizard.balanceOf(bank.address); */
-      /* assert.equal(reward, rewardTokens); */
+      const rewardTokens = await wizard.balanceOf(bank.address);
+      assert.equal(reward.toString(), rewardTokens.toString());
     });
   });
   describe("deposit", async function () {
@@ -56,4 +55,4 @@ describe("Bank", function () {
     });
     it("increses he amount of tokens in the contract");
   });
-});
+}); */

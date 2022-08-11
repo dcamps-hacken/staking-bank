@@ -12,5 +12,6 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
     log: true,
     args: [interval, reward, token],
   });
+  wizard.transfer(bank.address, reward, { from: deployer });
 };
 module.exports.tags = ["all", "bank"];

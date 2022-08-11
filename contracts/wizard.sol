@@ -14,7 +14,7 @@ contract Wizard is ERC20 {
      *  @notice 10M tokens are minted when the contract is deployed
      */
     constructor() ERC20("Wizard", "WZD") {
-        _mint(msg.sender, 1e10 * 10**decimals());
+        _mint(msg.sender, 1e5 * 10**decimals());
     }
 
     /**

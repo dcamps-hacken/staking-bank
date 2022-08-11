@@ -1,9 +1,12 @@
-module.exports = async ({ deployments, getNamedAccounts }) => {
+const { ethers } = require("hardhat");
+
+module.exports = async () => {
   const { deploy, log } = deployments;
-  const { deployer } = await getNamedAccounts();
+  let deployer;
+  [deployer] = await ethers.getSigners();
 
   const wizard = await deploy("Wizard", {
-    from: deployer,
+    from: deployer.address,
     log: true,
     args: [],
   });

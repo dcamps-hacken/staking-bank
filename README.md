@@ -1,6 +1,9 @@
 # Bank smart contract task
 
-## remember to check getContract vs getContractAt or whatever when dealing with ATRAC!
+## reminders:
+
+- check getContract vs getContractAt or whatever when dealing with ATRAC!
+- fallback/receive checks --> control user sending ETH/ATRAC
 
 Your task is to create a bank smart contract which will enable anyone to deposit an amount X of XYZ
 ERC20 tokens to their savings (staking) account. The bank smart contract also contains an additional
@@ -10,28 +13,33 @@ calculation.
 
 Contract dynamics (example illustrated below):
 
-✅ The smart contract is deployed at t0
-✅ The reward pool R is split into 3 subpools
-✅ R1 = 20% of R, available after 2T has passed since contract deployment
-✅ R2 = 30% of R, available after 3T has passed since contract deployment
-✅ R3 = 50% of R, available after 4T has passed since contract deployment
+✅ The smart contract is deployed at t0 <br>
+<br>
+✅ The reward pool R is split into 3 subpools <br>
+✅ R1 = 20% of R, available after 2T has passed since contract deployment <br>
+✅ R2 = 30% of R, available after 3T has passed since contract deployment <br>
+✅ R3 = 50% of R, available after 4T has passed since contract deployment <br>
+<br>
 ✅ Deposit period: During the first period of T time the users can deposit tokens. After T has
-passed, no more deposits are allowed.
+passed, no more deposits are allowed. <br>
+<br>
 ✅ Lock period: From moment t0+T to t0+2T, users cannot withdraw their tokens (If the user tries to
 remove tokens before T time has elapsed since they have deposited, the transaction should
-fail).
+fail). <br>
+<br>
 ✅ Withdraw periods: After T2 has passed since contract deployment, the users can withdraw their
-tokens. However, the longer they wait, the bigger the reward they get
+tokens. However, the longer they wait, the bigger the reward they get. <br>
 ✅ If a user withdraws tokens during the period t0+2T to t0+3T, they collect a proportional
 amount of the reward pool R1, according to the ratio of the number of tokens they have
-staked compared to the total number of tokens staked on the contract (by all users).
+staked compared to the total number of tokens staked on the contract (by all users). <br>
 ✅ If a user withdraws tokens during the period t0+3T to t0+4T, they collect a proportional
 amount of the remaining reward pool R1 and R2, according to the proportion of the
 number of tokens they have staked compared to the total number of tokens staked on
-the contract (by all users)
+the contract (by all users). <br>
 ✅ If the user withdraws tokens after 4T has passed since contract deployment, they can
 receive the full reward of R (R1+R2+R3) proportionally to their ratio of tokens in the
-total pool
+total pool. <br>
+<br>
 ✅ If no user waits for the last period (for 4T to pass), the remaining tokens on the
 contract can be withdrawn by the bank (contract owner). In no other situation can the
 bank owner remove tokens from the contract.

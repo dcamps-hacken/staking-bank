@@ -22,8 +22,8 @@ contract Bank is Ownable, ReentrancyGuard {
     uint256 immutable reward;
 
     uint256 private R;
-    mapping(address => uint256) public balances;
-    uint256 public stake;
+    mapping(address => uint256) private balances;
+    uint256 private stake;
 
     event StatusUpdate(BankStatus newStatus);
     event Deposit(address indexed user, uint256 indexed amount);
@@ -59,7 +59,7 @@ contract Bank is Ownable, ReentrancyGuard {
 
     //requires user approval
     function deposit(uint256 _amount) external nonReentrant checkStatus {
-        require(status == BankStatus.DEPOSIT, "Deposit period not active!");
+        //require(status == BankStatus.DEPOSIT, "Deposit period not active!");
         IERC20(token).transferFrom(msg.sender, address(this), _amount);
         balances[msg.sender] += _amount;
         stake += balances[msg.sender];
@@ -86,7 +86,7 @@ contract Bank is Ownable, ReentrancyGuard {
         IERC20(token).transfer(msg.sender, R);
     }
 
-    function _updateStatus() private onlyOwner {
+    function _updateStatus() private {
         // Make sure all are whole numbers!!
         if (block.timestamp <= (t0 + T)) {
             if (status != BankStatus.LOCK) {
@@ -116,5 +116,18 @@ contract Bank is Ownable, ReentrancyGuard {
                 R += (reward * 5) / 10;
             }
         }
+    }
+
+    function getStake() public view returns (uint256) {
+        return stake;
+    }
+
+    function getBalance(address _user) public view returns (uint256 balance) {
+        balance = balances[_user];
+        return balance;
+    }
+
+    function getStatus() public view returns (BankStatus) {
+        return status;
     }
 }

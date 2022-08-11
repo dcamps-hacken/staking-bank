@@ -48,7 +48,7 @@ contract Bank is Ownable, ReentrancyGuard {
         reward = _reward;
         R = 0;
         token = _token;
-        //requires owner approval
+        //requires owner approval --> permit?
         /* IERC20(_token).transferFrom(msg.sender, address(this), _reward); */
     }
 
@@ -80,7 +80,7 @@ contract Bank is Ownable, ReentrancyGuard {
         emit Withdrawal(msg.sender, balance, yield);
     }
 
-    function recall() external onlyOwner {
+    function recall() external onlyOwner checkStatus {
         require(status == BankStatus.THIRD_UNLOCK);
         require(stake == 0); // can it actually be 0?
         IERC20(token).transfer(msg.sender, R);

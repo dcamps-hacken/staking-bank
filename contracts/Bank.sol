@@ -16,10 +16,10 @@ contract Bank is Ownable, ReentrancyGuard {
     }
     BankStatus public status;
 
-    address immutable token;
-    uint256 immutable T;
-    uint256 immutable t0;
-    uint256 immutable reward;
+    address public immutable token;
+    uint256 public immutable T;
+    uint256 public immutable t0;
+    uint256 public immutable reward;
 
     uint256 private R;
     mapping(address => uint256) private balances;
@@ -59,7 +59,9 @@ contract Bank is Ownable, ReentrancyGuard {
     receive() external payable {}
 
     //requires user approval
-    function deposit(uint256 _amount) external nonReentrant /* checkStatus */
+    function deposit(uint256 _amount)
+        external
+        nonReentrant /* checkStatus */
     {
         require(status == BankStatus.DEPOSIT, "Deposit period not active!");
         IERC20(token).transferFrom(msg.sender, address(this), _amount);
@@ -68,15 +70,18 @@ contract Bank is Ownable, ReentrancyGuard {
         emit Deposit(msg.sender, _amount);
     }
 
-    function withdraw() external nonReentrant checkStatus {
+    function withdraw()
+        external
+        nonReentrant /* checkStatus */
+    {
         require(
-            status != BankStatus(0) && status != BankStatus(1),
+            status != BankStatus.DEPOSIT && status != BankStatus.LOCK,
             "Withdrawals not available yet!"
         );
         require(balances[msg.sender] > 0, "No tokens to withdraw!");
-        uint256 yield = R * (balances[msg.sender] / stake);
         uint256 balance = balances[msg.sender];
-        stake -= balances[msg.sender];
+        uint256 yield = R * (balance / stake);
+        stake -= balance;
         balances[msg.sender] = 0;
         IERC20(token).transfer(msg.sender, balance + yield);
         emit Withdrawal(msg.sender, balance, yield);
@@ -91,13 +96,19 @@ contract Bank is Ownable, ReentrancyGuard {
 
     function _updateStatus() private {
         // Make sure all are whole numbers!!
-        if (block.timestamp <= (t0 + T)) {
+        uint256 interval = T;
+        uint256 lockStart = t0 + interval;
+        uint256 firstUnlockStart = lockStart + interval;
+        uint256 secondUnlockStart = firstUnlockStart + interval;
+        uint256 thirdUnlockStart = secondUnlockStart + interval;
+        if (block.timestamp <= lockStart) {
             if (status != BankStatus.LOCK) {
                 status = BankStatus.LOCK;
                 emit StatusUpdate(status);
             }
         } else if (
-            (t0 + 2 * T) <= block.timestamp && block.timestamp < (t0 + 3 * T)
+            firstUnlockStart <= block.timestamp &&
+            block.timestamp < secondUnlockStart
         ) {
             if (status != BankStatus.FIRST_UNLOCK) {
                 status = BankStatus.FIRST_UNLOCK;
@@ -105,7 +116,8 @@ contract Bank is Ownable, ReentrancyGuard {
                 R += (reward * 2) / 10;
             }
         } else if (
-            (t0 + 3 * T) <= block.timestamp && block.timestamp < (t0 + 4 * T)
+            secondUnlockStart <= block.timestamp &&
+            block.timestamp < thirdUnlockStart
         ) {
             if (status != BankStatus.SECOND_UNLOCK) {
                 status = BankStatus.SECOND_UNLOCK;
@@ -130,15 +142,7 @@ contract Bank is Ownable, ReentrancyGuard {
         return balance;
     }
 
-    function getStatus() public view returns (BankStatus) {
-        return status;
-    }
-
     function getReward() public view returns (uint256) {
         return R;
-    }
-
-    function getInterval() public view returns (uint256) {
-        return T;
     }
 }

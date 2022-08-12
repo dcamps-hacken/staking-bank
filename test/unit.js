@@ -1,12 +1,10 @@
 const { deployments, ethers, getNamedAccounts, network } = require("hardhat");
 const { expect, assert } = require("chai");
-const { constants } = require("ethers");
 
 const minted = ethers.utils.parseEther("100");
 let deployer, user1, user2;
 
 describe("Wizard", function () {
-  let totalSupply = constants.Zero;
   const initialSupply = ethers.utils.parseEther("100000");
   beforeEach(async function () {
     await deployments.fixture(["token"]);
@@ -22,8 +20,7 @@ describe("Wizard", function () {
   describe("mint", function () {
     it("Should mint additional tokens on demand", async function () {
       const userBalance = await wizard.balanceOf(user1.address);
-      const mint = await wizard.mint(user1.address, minted);
-      await mint.wait(); // wait until the transaction is mined
+      await wizard.mint(user1.address, "100");
       const newBalance = await wizard.balanceOf(user1.address);
       const calculatedNewBalance = userBalance.add(minted);
       assert.equal(newBalance.toString(), calculatedNewBalance.toString());
@@ -31,31 +28,44 @@ describe("Wizard", function () {
   });
 });
 
-describe.only("Bank", function () {
+describe("Bankv2", function () {
   beforeEach(async function () {
     await deployments.fixture(["all"]);
-    bank = await ethers.getContract("Bank");
+    bank = await ethers.getContract("Bankv2");
     wizard = await ethers.getContract("Wizard");
     [deployer, user1, user2] = await ethers.getSigners();
     const mint = await wizard.mint(user1.address, minted);
-    await mint.wait();
+    this.reward = ethers.utils.parseEther("10000");
+    this.deployTime = await bank.t0();
   });
 
   describe("constructor", function () {
-    it("sends reward tokens to the contract", async function () {
-      const rewardTokens = await wizard.balanceOf(bank.address);
-      assert.equal(reward.toString(), rewardTokens.toString());
+    it("sets the token correctly", async function () {
+      const inputToken = wizard.address;
+      const setToken = await bank.token();
+      assert.equal(setToken.toString(), inputToken);
     });
 
-    it("initializes the bank status correctly", async function () {
-      const bankStatus = await bank.getStatus();
-      assert.equal(bankStatus.toString(), "0");
+    it("matches the reward pools with the tokens deposited to the contract by the owner", async function () {
+      const pools = await bank.getR1().add(bank.getR2()).add(bank.getR3());
+      const rewardTokens = await wizard.balanceOf(bank.address);
+      assert.equal(
+        this.reward.toString(),
+        rewardTokens.toString(),
+        pools.toString()
+      );
     });
 
     it("sets the time interval T correctly", async function () {
       const inputInterval = "86400";
-      const setInterval = await bank.getInterval();
-      assert.equal(inputInterval.toString(), inputInterval);
+      const setInterval = await bank.T();
+      assert.equal(setInterval.toString(), inputInterval);
+    });
+
+    it("sets the deployment time correctly", async function () {
+      const lastTimestamp = await hre.ethers.provider.getBlock("latest")
+        .timestamp;
+      await assert.equal(bank.t0().toString(), lastTimestamp);
     });
   });
 
@@ -67,16 +77,14 @@ describe.only("Bank", function () {
       await wizard.connect(user1).approve(bank.address, minted);
     });
 
-    it("should revert if the status of the bank is not DEPOSIT", async function () {
-      console.log(await bank.status());
-      await network.provider.send("evm_increaseTime", [
-        this.interval.toNumber() + 1,
+    it("should revert if deposit time has passed", async function () {
+      await network.provider.send("evm_setNextBlockTimestamp", [
+        bank.t0().add(bank.T()),
       ]);
-      await network.provider.send("evm_mine", []);
-      console.log(await bank.status());
-      /* await expect(bank.deposit(depositAmount)).to.be.revertedWith(
-        "Deposit period not active!"
-      ); */
+      await network.provider.send("evm_mine");
+      await expect(bank.connect(user1).deposit(minted)).to.be.revertedWith(
+        "Deposit period has passed"
+      );
     });
 
     it("increses he amount of tokens in the contract", async function () {
@@ -110,9 +118,15 @@ describe.only("Bank", function () {
   });
 
   describe("withdraw", function () {
-    it("reverts if the bank is not in an unlock period", async function () {
+    it("reverts if the bank is not in unlock", async function () {
       await expect(bank.connect(user1).withdraw()).to.be.revertedWith(
-        "Withdrawals not available yet!"
+        "Withdrawals not available yet"
+      );
+    });
+
+    it("reverts if the user has no deposited tokens", async function () {
+      await expect(bank.connect(user1).withdraw()).to.be.revertedWith(
+        "No tokens deposited"
       );
     });
   });
@@ -123,12 +137,6 @@ describe.only("Bank", function () {
         "Ownable: caller is not the owner"
       );
     });
-
-    /* it("reverts if the status is not THIRD_UNLOCK", async function () {
-      await expect(bank.recall()).to.be.revertedWith(
-        "Recall not available yet"
-      );
-    }); */
 
     it("reverts if there are staked tokens", async function () {
       await wizard.connect(user1).approve(bank.address, minted);
@@ -146,5 +154,37 @@ describe.only("Bank", function () {
       console.log(remainingTokens);
       assert.equal(balanceIncrease.toString(), remainingTokens.toString());
     }); */
+  });
+
+  describe("getR", function () {
+    it("returns R as R1 during the first unlock", async function () {
+      this.firstThreshold = (await bank.T())
+        .mul(ethers.BigNumber.from("3"))
+        .sub(ethers.BigNumber.from("1"))
+        .add(this.deployTime);
+      await network.provider.send("evm_setNextBlockTimestamp", [
+        this.firstThreshold,
+      ]);
+      await network.provider.send("evm_mine");
+      await assert.equal(bank.getR().toString(), bank.R1().toString());
+    });
+    it("returns R as R1 + R2 during the second unlock", async function () {
+      this.secondReward = await bank.getR1().add(bank.getR2());
+      this.secondInterval = (await bank.T()).add(this.firstThreshold);
+      await network.provider.send("evm_setNextBlockTimestamp", [
+        this.secondInterval,
+      ]);
+      await network.provider.send("evm_mine");
+      await assert.equal(bank.getR().toString(), this.secondReward.toString());
+    });
+    it("returns R as R1 + R2 + R3 during the second unlock", async function () {
+      this.thirdReward = await this.secondReward.add(bank.getR3());
+      this.thirdInterval = this.secondInterval.add(ethers.BigNumber.from("1"));
+      await network.provider.send("evm_setNextBlockTimestamp", [
+        this.thirdInterval,
+      ]);
+      await network.provider.send("evm_mine");
+      await assert.equal(bank.getR().toString(), thirdReward.toString());
+    });
   });
 });

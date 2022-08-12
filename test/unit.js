@@ -42,42 +42,58 @@ describe.only("Bank", function () {
     const mint = await wizard.mint(user1.address, minted);
     await mint.wait();
   });
+
   describe("constructor", async function () {
     it("sends reward tokens to the contract", async function () {
       const rewardTokens = await wizard.balanceOf(bank.address);
       assert.equal(reward.toString(), rewardTokens.toString());
     });
   });
+
   describe("deposit", async function () {
     beforeEach(async function () {
       this.initContractBalance = await wizard.balanceOf(bank.address);
       this.initUserBalance = await bank.getBalance(user1.address);
       this.initStake = await bank.getStake();
       await wizard.connect(user1).approve(bank.address, minted);
-      await bank.connect(user1).deposit(minted);
     });
+
     /* it("should revert if the status of the bank is not DEPOSIT", async function () {
       console.log(await bank.status());
       await expect(bank.deposit(depositAmount)).to.be.revertedWith(
         "Deposit period not active!"
       );
     }); */
+
     it("increses he amount of tokens in the contract", async function () {
+      await bank.connect(user1).deposit(minted);
       const newContractBalance = await wizard.balanceOf(bank.address);
       const contractBalanceIncrease = newContractBalance.sub(
         this.initContractBalance
       );
       assert.equal(contractBalanceIncrease.toString(), minted.toString());
     });
+
     it("tracks the balance of the user", async function () {
+      await bank.connect(user1).deposit(minted);
       const newUserBalance = await bank.getBalance(user1.address);
       const userBalanceIncrease = newUserBalance.sub(this.initUserBalance);
       assert.equal(userBalanceIncrease.toString(), minted.toString());
     });
+
     it("tracks the total staked amount of tokens", async function () {
+      await bank.connect(user1).deposit(minted);
       const newStake = await bank.getStake();
       const stakeIncrease = newStake.sub(this.initStake);
       assert.equal(stakeIncrease.toString(), minted.toString());
+    });
+  });
+
+  describe("recall", async function () {
+    it("reverts if the caller is not the owner", async function () {
+      await expect(bank.connect(user1).recall()).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      );
     });
   });
 });

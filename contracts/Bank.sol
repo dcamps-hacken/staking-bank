@@ -81,8 +81,8 @@ contract Bank is Ownable, ReentrancyGuard {
     }
 
     function recall() external onlyOwner checkStatus {
-        require(status == BankStatus.THIRD_UNLOCK);
-        require(stake == 0); // can it actually be 0?
+        require(status == BankStatus.THIRD_UNLOCK, "Recall not available yet");
+        require(stake == 0, "Tokens still staked"); // can it actually be 0?
         IERC20(token).transfer(msg.sender, R);
     }
 

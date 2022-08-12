@@ -5,7 +5,7 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
 
   wizard = await ethers.getContract("Wizard");
 
-  interval = "60";
+  interval = "86400"; //24h
   reward = ethers.utils.parseEther("10000");
   token = wizard.address;
   const bank = await deploy("Bank", {

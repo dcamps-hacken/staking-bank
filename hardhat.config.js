@@ -4,6 +4,7 @@ require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
 require("hardhat-deploy");
+require("@nomiclabs/hardhat-solhint");
 
 module.exports = {
   solidity: {

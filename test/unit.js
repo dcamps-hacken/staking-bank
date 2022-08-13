@@ -1,5 +1,6 @@
 const { deployments, ethers, getNamedAccounts, network } = require("hardhat");
 const { expect, assert } = require("chai");
+const { constants } = require("ethers");
 
 const minted = ethers.utils.parseEther("100");
 let deployer, user1, user2;
@@ -37,6 +38,12 @@ describe("Bankv2", function () {
     this.reward = ethers.utils.parseEther("10000");
     this.deployTime = await bank.t0();
     this.T = await bank.T();
+    this.firstUnlock = 2 * this.T;
+    this.secondUnlock = 3 * this.T;
+    this.thirdUnlock = 4 * this.T;
+    this.R1 = this.reward.mul(2).div(10);
+    this.R2 = this.reward.mul(3).div(10);
+    this.R3 = this.reward.mul(5).div(10);
   });
 
   describe("constructor", function () {
@@ -46,14 +53,17 @@ describe("Bankv2", function () {
       assert.equal(setToken.toString(), inputToken);
     });
 
-    it("matches the reward pools with the tokens deposited to the contract by the owner", async function () {
-      const pools = await bank.getR1().add(bank.getR2()).add(bank.getR3());
+    it("matches the reward with the tokens deposited to the contract by the owner", async function () {
+      const R1 = await bank.getR1();
+      const R2 = await bank.getR2();
+      const R3 = await bank.getR3();
+      const R = R1.add(R2).add(R3);
+      assert.equal(R.toString(), this.reward.toString());
+    });
+
+    it("matches sets the reward pools correctly", async function () {
       const rewardTokens = await wizard.balanceOf(bank.address);
-      assert.equal(
-        this.reward.toString(),
-        rewardTokens.toString(),
-        pools.toString()
-      );
+      assert.equal(this.reward.toString(), rewardTokens.toString());
     });
 
     it("sets the time interval T correctly", async function () {
@@ -62,52 +72,52 @@ describe("Bankv2", function () {
       assert.equal(setInterval.toString(), inputInterval);
     });
 
-    it("sets the deployment time correctly", async function () {
-      const lastTimestamp = await hre.ethers.provider.getBlock("latest")
-        .timestamp;
-      await assert.equal(bank.t0().toString(), lastTimestamp);
+    it("records the deployment time", async function () {
+      await expect(this.deployTime.toNumber()).to.be.greaterThan(
+        constants.Zero.toNumber()
+      );
     });
   });
 
   describe("deposit", function () {
     beforeEach(async function () {
-      this.initContractBalance = await wizard.balanceOf(bank.address);
-      this.initUserBalance = await bank.getBalance(user1.address);
-      this.initStake = await bank.getStake();
       await wizard.mint(user1.address, minted);
       await wizard.connect(user1).approve(bank.address, minted);
     });
 
     it("should revert if deposit time has passed", async function () {
-      await network.provider.send("evm_setNextBlockTimestamp", [
-        bank.t0().add(bank.T()),
-      ]);
-      await network.provider.send("evm_mine");
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.T.toNumber()],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
       await expect(bank.connect(user1).deposit(minted)).to.be.revertedWith(
         "Deposit period has passed"
       );
     });
 
-    it("increses he amount of tokens in the contract", async function () {
+    it("increses the amount of tokens in the contract", async function () {
+      const initContractBalance = await wizard.balanceOf(bank.address);
       await bank.connect(user1).deposit(minted);
       const newContractBalance = await wizard.balanceOf(bank.address);
-      const contractBalanceIncrease = newContractBalance.sub(
-        this.initContractBalance
-      );
+      const contractBalanceIncrease =
+        newContractBalance.sub(initContractBalance);
       assert.equal(contractBalanceIncrease.toString(), minted.toString());
     });
 
     it("tracks the balance of the user", async function () {
+      const initUserBalance = await bank.getBalance(user1.address);
       await bank.connect(user1).deposit(minted);
       const newUserBalance = await bank.getBalance(user1.address);
-      const userBalanceIncrease = newUserBalance.sub(this.initUserBalance);
+      const userBalanceIncrease = newUserBalance.sub(initUserBalance);
       assert.equal(userBalanceIncrease.toString(), minted.toString());
     });
 
-    it("tracks the total staked amount of tokens", async function () {
+    it("tracks the staked amount of tokens", async function () {
+      const initStake = await bank.getStake();
       await bank.connect(user1).deposit(minted);
       const newStake = await bank.getStake();
-      const stakeIncrease = newStake.sub(this.initStake);
+      const stakeIncrease = newStake.sub(initStake);
       assert.equal(stakeIncrease.toString(), minted.toString());
     });
 
@@ -126,9 +136,95 @@ describe("Bankv2", function () {
     });
 
     it("reverts if the user has no deposited tokens", async function () {
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.firstUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
       await expect(bank.connect(user1).withdraw()).to.be.revertedWith(
         "No tokens deposited"
       );
+    });
+
+    it("returns the balance of the user to 0", async function () {
+      await wizard.mint(user1.address, minted);
+      await wizard.connect(user1).approve(bank.address, minted);
+      await bank.connect(user1).deposit(minted);
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.firstUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      await bank.connect(user1).withdraw();
+      const newBalance = await bank.getBalance(user1.address);
+      assert.equal(newBalance.toString(), "0");
+    });
+
+    it("reduces the stake by withdraw amount", async function () {
+      await wizard.mint(user1.address, minted);
+      await wizard.connect(user1).approve(bank.address, minted);
+      await bank.connect(user1).deposit(minted);
+      const initStake = await bank.getStake();
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.firstUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      await bank.connect(user1).withdraw();
+      const newStake = await bank.getStake();
+      const stakeReduction = initStake.sub(newStake);
+      assert.equal(stakeReduction.toString(), minted.toString());
+    });
+
+    it("sends the proper amount of tokens to the user", async function () {
+      // deposit tokens into the contract
+      await wizard.mint(user1.address, minted);
+      await wizard.connect(user1).approve(bank.address, minted);
+      await bank.connect(user1).deposit(minted);
+
+      // move timestamp to first unlock
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.firstUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+
+      // get tokens in user account and yield tokens
+      const initUserBalance = await wizard.balanceOf(user1.address);
+      const yield = this.R1;
+
+      // withdraw tokens
+      await bank.connect(user1).withdraw();
+
+      // get and calculate increase of tokens in user account after withdraw
+      const newUserBalance = await wizard.balanceOf(user1.address);
+      const balanceIncrease = newUserBalance.sub(initUserBalance);
+      const calculatedBalanceIncrease = minted.add(yield);
+
+      // compare calculated increase amount of tokens matches actual increase
+      assert.equal(
+        balanceIncrease.toString(),
+        calculatedBalanceIncrease.toString()
+      );
+    });
+
+    it("emits the Withdraw event with args", async function () {
+      // deposit tokens into the contract
+      await wizard.mint(user1.address, minted);
+      await wizard.connect(user1).approve(bank.address, minted);
+      await bank.connect(user1).deposit(minted);
+
+      // move timestamp to first unlock
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.firstUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+
+      // check withdraw emits Withdraw event
+      await expect(bank.connect(user1).withdraw())
+        .to.emit(bank, "Withdrawal")
+        .withArgs(user1.address, minted, this.R1);
     });
   });
 
@@ -159,39 +255,33 @@ describe("Bankv2", function () {
 
   describe("getR", function () {
     it("R equals R1 during the first unlock", async function () {
-      const R = this.reward.mul(2).div(10); //20% of reward
-      const firstUnlock = 2 * this.T;
       await network.provider.request({
         method: "evm_increaseTime",
-        params: [firstUnlock],
+        params: [this.firstUnlock],
       });
       await network.provider.request({ method: "evm_mine", params: [] });
-      const newR = await bank.callStatic.getR();
-      assert.equal(newR.toString(), R.toString());
+      const R = await bank.callStatic.getR();
+      assert.equal(R.toString(), this.R1.toString());
     });
 
     it("R equals R1 + R2 during the second unlock", async function () {
-      const R = this.reward.mul(5).div(10); //50% of reward
-      const secondUnlock = 3 * this.T;
       await network.provider.request({
         method: "evm_increaseTime",
-        params: [secondUnlock],
+        params: [this.secondUnlock],
       });
       await network.provider.request({ method: "evm_mine", params: [] });
-      const newR = await bank.callStatic.getR();
-      assert.equal(newR.toString(), R.toString());
+      const R = await bank.callStatic.getR();
+      assert.equal(R.toString(), this.R1.add(this.R2).toString());
     });
 
     it("R equals R1 + R2 + R3 during the third unlock", async function () {
-      const R = this.reward; //100% of reward
-      const thirdUnlock = 4 * this.T;
       await network.provider.request({
         method: "evm_increaseTime",
-        params: [thirdUnlock],
+        params: [this.thirdUnlock],
       });
       await network.provider.request({ method: "evm_mine", params: [] });
-      const newR = await bank.callStatic.getR();
-      assert.equal(newR.toString(), R.toString());
+      const R = await bank.callStatic.getR();
+      assert.equal(R.toString(), this.reward.toString());
     });
   });
 });

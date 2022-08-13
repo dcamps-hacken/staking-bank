@@ -34,9 +34,9 @@ describe("Bankv2", function () {
     bank = await ethers.getContract("Bankv2");
     wizard = await ethers.getContract("Wizard");
     [deployer, user1, user2] = await ethers.getSigners();
-    const mint = await wizard.mint(user1.address, minted);
     this.reward = ethers.utils.parseEther("10000");
     this.deployTime = await bank.t0();
+    this.T = await bank.T();
   });
 
   describe("constructor", function () {
@@ -74,6 +74,7 @@ describe("Bankv2", function () {
       this.initContractBalance = await wizard.balanceOf(bank.address);
       this.initUserBalance = await bank.getBalance(user1.address);
       this.initStake = await bank.getStake();
+      await wizard.mint(user1.address, minted);
       await wizard.connect(user1).approve(bank.address, minted);
     });
 
@@ -157,34 +158,40 @@ describe("Bankv2", function () {
   });
 
   describe("getR", function () {
-    it("returns R as R1 during the first unlock", async function () {
-      this.firstThreshold = (await bank.T())
-        .mul(ethers.BigNumber.from("3"))
-        .sub(ethers.BigNumber.from("1"))
-        .add(this.deployTime);
-      await network.provider.send("evm_setNextBlockTimestamp", [
-        this.firstThreshold,
-      ]);
-      await network.provider.send("evm_mine");
-      await assert.equal(bank.getR().toString(), bank.R1().toString());
+    it("R equals R1 during the first unlock", async function () {
+      const R = this.reward.mul(2).div(10); //20% of reward
+      const firstUnlock = 2 * this.T;
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [firstUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      const newR = await bank.callStatic.getR();
+      assert.equal(newR.toString(), R.toString());
     });
-    it("returns R as R1 + R2 during the second unlock", async function () {
-      this.secondReward = await bank.getR1().add(bank.getR2());
-      this.secondInterval = (await bank.T()).add(this.firstThreshold);
-      await network.provider.send("evm_setNextBlockTimestamp", [
-        this.secondInterval,
-      ]);
-      await network.provider.send("evm_mine");
-      await assert.equal(bank.getR().toString(), this.secondReward.toString());
+
+    it("R equals R1 + R2 during the second unlock", async function () {
+      const R = this.reward.mul(5).div(10); //50% of reward
+      const secondUnlock = 3 * this.T;
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [secondUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      const newR = await bank.callStatic.getR();
+      assert.equal(newR.toString(), R.toString());
     });
-    it("returns R as R1 + R2 + R3 during the second unlock", async function () {
-      this.thirdReward = await this.secondReward.add(bank.getR3());
-      this.thirdInterval = this.secondInterval.add(ethers.BigNumber.from("1"));
-      await network.provider.send("evm_setNextBlockTimestamp", [
-        this.thirdInterval,
-      ]);
-      await network.provider.send("evm_mine");
-      await assert.equal(bank.getR().toString(), thirdReward.toString());
+
+    it("R equals R1 + R2 + R3 during the third unlock", async function () {
+      const R = this.reward; //100% of reward
+      const thirdUnlock = 4 * this.T;
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [thirdUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      const newR = await bank.callStatic.getR();
+      assert.equal(newR.toString(), R.toString());
     });
   });
 });

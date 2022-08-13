@@ -146,20 +146,30 @@ describe("Bankv2", function () {
       );
     });
 
-    it("reduces R by withdraw amount", async function () {
+    it("reduces R by yield amount", async function () {
+      // deposit tokens into the contract
       await wizard.mint(user1.address, minted);
       await wizard.connect(user1).approve(bank.address, minted);
       await bank.connect(user1).deposit(minted);
+
+      // move timestamp to first unlock
       await network.provider.request({
         method: "evm_increaseTime",
         params: [this.firstUnlock],
       });
       await network.provider.request({ method: "evm_mine", params: [] });
-      const initR = await bank.getR();
+
+      // calculate yield tokens (in this case it equals R1) and get R
+      const yield = this.R1;
+      const initR = await bank.callStatic.getR();
+
+      // make the withdraw
       await bank.connect(user1).withdraw();
-      const newR = await bank.getR();
+
+      // calculate the decrease in R and compare it with the farmed yield
+      const newR = await bank.callStatic.getR();
       const decreaseR = initR.sub(newR);
-      assert.equal(decreaseR.toString(), minted.toString());
+      assert.equal(decreaseR.toString(), yield.toString());
     });
 
     it("returns the balance of the user to 0", async function () {
@@ -278,13 +288,13 @@ describe("Bankv2", function () {
       await network.provider.request({ method: "evm_mine", params: [] });
 
       // get initial amount tokens in deployer wallet
-      const initBalanceOwner = wizard.balanceOf(deployer);
+      const initBalanceOwner = await wizard.balanceOf(deployer.address);
 
       // call recall function
       await bank.recall();
 
       // get new amount of tokens in deployer wallet
-      const newBalanceOwner = wizard.balanceOf(deployer);
+      const newBalanceOwner = await wizard.balanceOf(deployer.address);
 
       // compare increased amount of tokens in deployer wallet with R
       const balanceIncrease = newBalanceOwner.sub(initBalanceOwner);

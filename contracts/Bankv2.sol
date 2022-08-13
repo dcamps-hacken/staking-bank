@@ -61,6 +61,7 @@ contract Bankv2 is Ownable, ReentrancyGuard {
         require(balances[msg.sender] > 0, "No tokens deposited");
         uint256 balance = balances[msg.sender];
         uint256 yield = getR() * (balance / stake);
+        R -= yield;
         balances[msg.sender] = 0;
         stake -= balance;
         IERC20(token).transfer(msg.sender, balance + yield);
@@ -70,8 +71,9 @@ contract Bankv2 is Ownable, ReentrancyGuard {
     function recall() external onlyOwner {
         require(block.timestamp >= t0 + 4 * T, "Recall not available yet");
         require(stake == 0, "Tokens still staked"); // can it actually be 0?
-        IERC20(token).transfer(msg.sender, getR());
-        emit Recall(getR());
+        uint256 recallAmount = getR();
+        IERC20(token).transfer(msg.sender, recallAmount);
+        emit Recall(recallAmount);
     }
 
     function getR() public returns (uint256) {

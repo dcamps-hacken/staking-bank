@@ -146,6 +146,22 @@ describe("Bankv2", function () {
       );
     });
 
+    it("reduces R by withdraw amount", async function () {
+      await wizard.mint(user1.address, minted);
+      await wizard.connect(user1).approve(bank.address, minted);
+      await bank.connect(user1).deposit(minted);
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.firstUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      const initR = await bank.getR();
+      await bank.connect(user1).withdraw();
+      const newR = await bank.getR();
+      const decreaseR = initR.sub(newR);
+      assert.equal(decreaseR.toString(), minted.toString());
+    });
+
     it("returns the balance of the user to 0", async function () {
       await wizard.mint(user1.address, minted);
       await wizard.connect(user1).approve(bank.address, minted);
@@ -235,26 +251,61 @@ describe("Bankv2", function () {
       );
     });
 
+    it("reverts if the bank is not in third unlock period", async function () {
+      await expect(bank.recall()).to.be.revertedWith(
+        "Recall not available yet"
+      );
+    });
+
     it("reverts if there are staked tokens", async function () {
+      await wizard.mint(user1.address, minted);
       await wizard.connect(user1).approve(bank.address, minted);
       await bank.connect(user1).deposit(minted);
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.thirdUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
       await expect(bank.recall()).to.be.revertedWith("Tokens still staked");
     });
 
-    // Required to move blocktime for this to work
-    /* it("sends all remaining tokens to the contract owner", async function () {
+    it("sends all remaining tokens to the contract owner", async function () {
+      // move the timestamp to third unlock: recall available and R = R1 + R2 + R3
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.thirdUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+
+      // get initial amount tokens in deployer wallet
       const initBalanceOwner = wizard.balanceOf(deployer);
-      const remainingTokens = await bank.getReward();
+
+      // call recall function
       await bank.recall();
+
+      // get new amount of tokens in deployer wallet
       const newBalanceOwner = wizard.balanceOf(deployer);
+
+      // compare increased amount of tokens in deployer wallet with R
       const balanceIncrease = newBalanceOwner.sub(initBalanceOwner);
-      console.log(remainingTokens);
-      assert.equal(balanceIncrease.toString(), remainingTokens.toString());
-    }); */
+      assert.equal(balanceIncrease.toString(), this.reward.toString());
+    });
+
+    it("emits the Withdraw event with args", async function () {
+      // move the timestamp to third unlock: recall available and R = R1 + R2 + R3
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.thirdUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+
+      // check recall emits Recall event
+      await expect(bank.recall()).to.emit(bank, "Recall").withArgs(this.reward);
+    });
   });
 
   describe("getR", function () {
-    it("R equals R1 during the first unlock", async function () {
+    it("R equals R1 after the first unlock", async function () {
       await network.provider.request({
         method: "evm_increaseTime",
         params: [this.firstUnlock],
@@ -264,7 +315,18 @@ describe("Bankv2", function () {
       assert.equal(R.toString(), this.R1.toString());
     });
 
-    it("R equals R1 + R2 during the second unlock", async function () {
+    it("R1 equals 0 after the first unlock", async function () {
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.firstUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      await bank.getR();
+      const R1 = await bank.getR1();
+      assert.equal(R1.toString(), "0");
+    });
+
+    it("R equals R1 + R2 after the second unlock", async function () {
       await network.provider.request({
         method: "evm_increaseTime",
         params: [this.secondUnlock],
@@ -272,6 +334,28 @@ describe("Bankv2", function () {
       await network.provider.request({ method: "evm_mine", params: [] });
       const R = await bank.callStatic.getR();
       assert.equal(R.toString(), this.R1.add(this.R2).toString());
+    });
+
+    it("R1 equals 0 after the second unlock", async function () {
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.secondUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      await bank.getR();
+      const R1 = await bank.getR1();
+      assert.equal(R1.toString(), "0");
+    });
+
+    it("R2 equals 0 after the second unlock", async function () {
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.secondUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      await bank.getR();
+      const R2 = await bank.getR2();
+      assert.equal(R2.toString(), "0");
     });
 
     it("R equals R1 + R2 + R3 during the third unlock", async function () {
@@ -282,6 +366,39 @@ describe("Bankv2", function () {
       await network.provider.request({ method: "evm_mine", params: [] });
       const R = await bank.callStatic.getR();
       assert.equal(R.toString(), this.reward.toString());
+    });
+
+    it("R1 equals 0 after the second unlock", async function () {
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.thirdUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      await bank.getR();
+      const R1 = await bank.getR1();
+      assert.equal(R1.toString(), "0");
+    });
+
+    it("R2 equals 0 after the third unlock", async function () {
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.thirdUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      await bank.getR();
+      const R2 = await bank.getR2();
+      assert.equal(R2.toString(), "0");
+    });
+
+    it("R3 equals 0 after the third unlock", async function () {
+      await network.provider.request({
+        method: "evm_increaseTime",
+        params: [this.thirdUnlock],
+      });
+      await network.provider.request({ method: "evm_mine", params: [] });
+      await bank.getR();
+      const R3 = await bank.getR3();
+      assert.equal(R3.toString(), "0");
     });
   });
 });

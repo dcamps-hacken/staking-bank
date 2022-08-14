@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.7;
+pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+/** @title EVM wallet generator
+ *  @author David Camps Novi
+ *  @dev This contract uses a factory pattern to deploy a new wallet for each user
+ */
 contract Bankv2 is Ownable, ReentrancyGuard {
     address public immutable token;
     uint256 public immutable T;
@@ -29,6 +33,11 @@ contract Bankv2 is Ownable, ReentrancyGuard {
     );
     event Recall(uint256 indexed amount);
 
+    /**
+     *  @notice
+     *  @dev
+     *  @param _interval description here
+     */
     constructor(
         address _token,
         uint256 _reward,
@@ -42,12 +51,12 @@ contract Bankv2 is Ownable, ReentrancyGuard {
         R3 = (_reward * 5) / 10;
     }
 
-    // manage direct tokens/eth sent to the contract.
-    fallback() external payable {}
+    /**
+     *  @notice
+     *  @dev
+     */
 
-    receive() external payable {}
-
-    //requires user approval
+    //requires user approval !!!!
     function deposit(uint256 _amount) external nonReentrant {
         require(block.timestamp < t0 + T, "Deposit period has passed");
         IERC20(token).transferFrom(msg.sender, address(this), _amount);
@@ -56,6 +65,10 @@ contract Bankv2 is Ownable, ReentrancyGuard {
         emit Deposit(msg.sender, _amount);
     }
 
+    /**
+     *  @notice
+     *  @dev
+     */
     function withdraw() external nonReentrant {
         require(block.timestamp >= t0 + 2 * T, "Withdrawals not available yet");
         require(balances[msg.sender] > 0, "No tokens deposited");
@@ -68,6 +81,10 @@ contract Bankv2 is Ownable, ReentrancyGuard {
         emit Withdrawal(msg.sender, balance, yield);
     }
 
+    /**
+     *  @notice
+     *  @dev
+     */
     function recall() external onlyOwner {
         require(block.timestamp >= t0 + 4 * T, "Recall not available yet");
         require(stake == 0, "Tokens still staked"); // can it actually be 0?
@@ -76,6 +93,10 @@ contract Bankv2 is Ownable, ReentrancyGuard {
         emit Recall(recallAmount);
     }
 
+    /**
+     *  @notice
+     *  @dev
+     */
     function getR() public returns (uint256) {
         // Make sure all are whole numbers!!
         if (block.timestamp < t0 + 3 * T) {

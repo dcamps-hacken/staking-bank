@@ -1,4 +1,4 @@
-module.exports = async ({ deployments, getNamedAccounts }) => {
+module.exports = async ({ deployments }) => {
   const { deploy, log } = deployments;
   let deployer;
   [deployer] = await ethers.getSigners();
@@ -9,7 +9,7 @@ module.exports = async ({ deployments, getNamedAccounts }) => {
   reward = ethers.utils.parseEther("10000");
   interval = "86400"; //24h
 
-  const bank = await deploy("Bankv2", {
+  const bank = await deploy("Bank", {
     from: deployer.address,
     log: true,
     args: [token, reward, interval],

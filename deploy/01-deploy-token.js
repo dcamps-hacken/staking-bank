@@ -5,7 +5,7 @@ module.exports = async () => {
   let deployer;
   [deployer] = await ethers.getSigners();
 
-  const wizard = await deploy("Wizard", {
+  await deploy("Wizard", {
     from: deployer.address,
     log: true,
     args: [],

@@ -18,8 +18,18 @@
     "solidity-coverage": "^0.7.21"
   },
   "scripts": {
+    "deploy": "yarn hardhat deploy",
+    "deploy-localhost": "yarn hardhat deploy --network localhost",
+    "deploy-rinkeby": "yarn hardhat deploy --network rinkeby",
+    "verify": "yarn hardhat run scripts/verify.js --network rinkeby",
     "test": "yarn hardhat test",
+    "test-localhost": "yarn hardhat test --network localhost",
+    "test-rinkeby": "yarn hardhat test --network rinkeby",
     "coverage": "yarn hardhat coverage",
-    "lint": "yarn solhint 'contracts/*.sol'"
+    "task-balance": "yarn hardhat balance --network rinkeby",
+    "task-mint": "yarn hardhat mint --network rinkeby --amount",
+    "task-deposit": "yarn hardhat deposit --network rinkeby --amount",
+    "task-withdraw": "yarn hardhat withdraw --network rinkeby",
+    "task-retrieve": "yarn hardhat retrieve --network rinkeby"
   }
 }

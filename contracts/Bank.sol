@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  *  @author David Camps Novi
  *  @dev This contract uses a factory pattern to deploy a new wallet for each user
  */
-contract Bankv2 is Ownable, ReentrancyGuard {
+contract Bank is Ownable, ReentrancyGuard {
     address public immutable token;
     uint256 public immutable T;
     uint256 public immutable t0;
@@ -31,7 +31,7 @@ contract Bankv2 is Ownable, ReentrancyGuard {
         uint256 indexed amount,
         uint256 yieldTokens
     );
-    event Recall(uint256 indexed amount);
+    event Retrieve(uint256 indexed amount);
 
     /**
      *  @notice
@@ -85,12 +85,12 @@ contract Bankv2 is Ownable, ReentrancyGuard {
      *  @notice
      *  @dev
      */
-    function recall() external onlyOwner {
-        require(block.timestamp >= t0 + 4 * T, "Recall not available yet");
+    function retrieve() external onlyOwner {
+        require(block.timestamp >= t0 + 4 * T, "Retrieve not available yet");
         require(stake == 0, "Tokens still staked"); // can it actually be 0?
-        uint256 recallAmount = getR();
-        IERC20(token).transfer(msg.sender, recallAmount);
-        emit Recall(recallAmount);
+        uint256 retrieveAmount = getR();
+        IERC20(token).transfer(msg.sender, retrieveAmount);
+        emit Retrieve(retrieveAmount);
     }
 
     /**

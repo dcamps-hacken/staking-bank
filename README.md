@@ -1,7 +1,11 @@
 ## reminders:
 
 - Deploy on Rinkeby
-- fallback/receive checks --> control user sending ETH/ERC20
+- Contract Verification
+- Bank staging test
+- Documentation
+- General review
+- Scripts package json
 
 # Bank smart contract
 

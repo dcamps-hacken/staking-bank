@@ -1,7 +1,5 @@
-const { ethers } = require("hardhat");
-
 module.exports = async () => {
-  const { deploy, log } = deployments;
+  const { deploy } = deployments;
   let deployer;
   [deployer] = await ethers.getSigners();
 

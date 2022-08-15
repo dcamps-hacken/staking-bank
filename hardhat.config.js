@@ -5,6 +5,7 @@ require("hardhat-gas-reporter");
 require("solidity-coverage");
 require("hardhat-deploy");
 require("@nomiclabs/hardhat-solhint");
+require("./tasks/task");
 
 module.exports = {
   solidity: {
@@ -18,25 +19,17 @@ module.exports = {
     },
     rinkeby: {
       url: process.env.RINKEBY_RPC_URL,
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: [process.env.DEPLOYER, process.env.USER1],
       chainId: 4,
-      blockConfirmations: 7,
+      blockConfirmations: 10,
+      gas: 30000000,
+      gasPrice: 100000000000,
+      blockGasLimit: 1000000000,
     },
   },
   etherscan: {
     apiKey: {
       rinkeby: process.env.ETHERSCAN_API_KEY,
-    },
-  },
-  namedAccounts: {
-    deployer: {
-      default: 0,
-    },
-    user1: {
-      default: 1,
-    },
-    user2: {
-      default: 2,
     },
   },
 };

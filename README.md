@@ -129,9 +129,9 @@ yarn verify
 
 ### Interact with the Rinkeby-deployed contracts
 
-In this case, there are no available tests. Instead, some tasks have been added to the project in order to interact with the contracts deployed on Rinkeby. The available tasks are:
-<br>
-Get balance of tokens in wallet:
+In this case, there are no available tests. Instead, some tasks have been added to the project in order to interact with the contracts deployed on Rinkeby. The available tasks are: <br>
+
+Get the balance of $WZD tokens in your wallet:
 
 ```
 yarn task-balance

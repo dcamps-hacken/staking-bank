@@ -34,9 +34,9 @@ contract Bank is Ownable, ReentrancyGuard {
     event Retrieve(uint256 indexed amount);
 
     /**
-     *  @notice
-     *  @dev
-     *  @param _interval description here
+     *  @param _token address of the token used in this bank
+     *  @param _reward amount of tokens sent in this contract by the owner as a reward for the users
+     *  @param _interval time (in seconds) that sets T to calculate the rewards for users
      */
     constructor(
         address _token,
@@ -52,11 +52,12 @@ contract Bank is Ownable, ReentrancyGuard {
     }
 
     /**
-     *  @notice
-     *  @dev
+     *  @notice Use this function to deposit any amount of tokens
+     *  @notice This function is only available before T has passed since contract deployment
+     *  @dev Deposit requires a previous approval of the ERC20 token to be spent by this bank,
+     *  it thus cannot be called directly but after the approval in a previous transaction
      */
 
-    //requires user approval !!!!
     function deposit(uint256 _amount) external nonReentrant {
         require(block.timestamp < t0 + T, "Deposit period has passed");
         IERC20(token).transferFrom(msg.sender, address(this), _amount);
@@ -66,8 +67,9 @@ contract Bank is Ownable, ReentrancyGuard {
     }
 
     /**
-     *  @notice
-     *  @dev
+     *  @notice Use this method to withdraw all your tokens from the bank
+     *  @notice This function is only available after 2T has passed since contract deployment
+     *  @notice An additional reward of tokens will be obtained depending on the staking time
      */
     function withdraw() external nonReentrant {
         require(block.timestamp >= t0 + 2 * T, "Withdrawals not available yet");
@@ -82,8 +84,9 @@ contract Bank is Ownable, ReentrancyGuard {
     }
 
     /**
-     *  @notice
-     *  @dev
+     *  @notice Retrieve is only available for the contract owner to be called
+     *  @notice This function can only be called after 4T has passed if all users have withdrawn their tokens
+     *  @notice Use this method to recover all tokens deposited in this contract to reward users
      */
     function retrieve() external onlyOwner {
         require(block.timestamp >= t0 + 4 * T, "Retrieve not available yet");
@@ -94,8 +97,8 @@ contract Bank is Ownable, ReentrancyGuard {
     }
 
     /**
-     *  @notice
-     *  @dev
+     *  @dev This function is only called to update the reward pools R, R1, R2, R3
+     *  depending on the timestamp it is called
      */
     function getR() public returns (uint256) {
         // Make sure all are whole numbers!!

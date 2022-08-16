@@ -21,7 +21,7 @@
     "deploy": "yarn hardhat deploy",
     "deploy-localhost": "yarn hardhat deploy --network localhost",
     "deploy-rinkeby": "yarn hardhat deploy --network rinkeby",
-    "verify": "yarn hardhat run scripts/verify.js --network rinkeby",
+    "verify": "yarn hardhat run scripts/verify-contracts.js --network rinkeby",
     "test": "yarn hardhat test",
     "test-localhost": "yarn hardhat test --network localhost",
     "test-rinkeby": "yarn hardhat test --network rinkeby",

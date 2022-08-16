@@ -1,10 +1,10 @@
 const { verify } = require("../utils/verify");
 
-wizardAddress = "0x1C14F806244C1E96e5611548ed7961511fE91076";
-bankAddress = "0x19Db9FaDCaE1f7B06d266a370BabDCA669828de4";
+wizardAddress = "0x609fB1523F468e6d4e0Cd7B0F9DcCcc6E4a0B62c";
+bankAddress = "0xC3476d21cb44914C3AB457F4BB2F47841024bd65";
 reward = ethers.utils.parseEther("10000");
 interval = "86400"; //24h
-bankArgs = [token, reward, interval];
+bankArgs = [wizardAddress, reward, interval];
 
 async function main() {
   await verify(wizardAddress, [], "contracts/Wizard.sol:Wizard");

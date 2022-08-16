@@ -1,8 +1,8 @@
 const { task } = require("hardhat/config");
 
 let deployer;
-const wizardAddress = "0x1C14F806244C1E96e5611548ed7961511fE91076";
-const bankAddress = "0x19Db9FaDCaE1f7B06d266a370BabDCA669828de4";
+const wizardAddress = "0x609fB1523F468e6d4e0Cd7B0F9DcCcc6E4a0B62c";
+const bankAddress = "0xC3476d21cb44914C3AB457F4BB2F47841024bd65";
 
 task("balance", "returns the balance of Wizard test tokens").setAction(
   async () => {

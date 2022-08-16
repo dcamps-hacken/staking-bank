@@ -1,9 +1,3 @@
-## reminders:
-
-- Bank staging test
-- Documentation
-- General review
-
 # Bank smart contract
 
 - Anyone can deposit any amount of wizard ($WZD) ERC20 tokens to their savings (staking) account. <br>

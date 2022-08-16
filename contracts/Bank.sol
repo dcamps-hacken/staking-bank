@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-/** @title EVM wallet generator
+/** @title Staking Bank contract
  *  @author David Camps Novi
- *  @dev This contract uses a factory pattern to deploy a new wallet for each user
+ *  @dev This contract is a Bank that allows users to deposit $WZD tokens to get additiona tokens as a reward
  */
 contract Bank is Ownable, ReentrancyGuard {
     address public immutable token;

@@ -46,7 +46,7 @@ A user withdrawing during the second unlock will collect an additional amount of
 
 A user withdrawing during the second unlock will collect an additional amount of $WZD tokens from `R1 + R2 + R3`.
 
-### RECALL
+### RETRIEVE
 
 If no user waits for the third unlock to withdraw their tokens, the remaining tokens on the contract can be withdrawn by the bank (contract owner). In no other situation can the bank owner remove tokens from the contract.
 

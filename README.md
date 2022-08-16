@@ -49,6 +49,7 @@ A user withdrawing during the second unlock will collect an additional amount of
 ### RETRIEVE
 
 If no user waits for the third unlock to withdraw their tokens, the remaining tokens on the contract can be withdrawn by the bank (contract owner). In no other situation can the bank owner remove tokens from the contract.
+<br>
 
 # QUICKSTART 🚀
 
@@ -69,8 +70,7 @@ In the following sections, the different available interactions with each networ
 
 ## 🥇 Hardhat Network
 
-This network is used for testing. Run them by: <br>
-<br>
+This network is used for testing. <br>
 
 ### Deploy your contracts:
 
@@ -92,7 +92,7 @@ yarn coverage
 
 ## 🥈Hardhat Localhost Testnet
 
-In order to run any test in this network, you will first need to start a Hardhat Node in a different terminal:
+In order to interact with this network, you will first need to start a Hardhat Node in a different terminal:
 
 ```
 yarn hardhat node

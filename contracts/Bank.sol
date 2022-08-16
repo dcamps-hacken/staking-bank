@@ -8,7 +8,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /** @title Staking Bank contract
  *  @author David Camps Novi
- *  @dev This contract is a Bank that allows users to deposit $WZD tokens to get additiona tokens as a reward
+ *  @dev This contract is a Bank that allows users to deposit $WZD tokens to get
+ *  additional tokens as a reward
  */
 contract Bank is Ownable, ReentrancyGuard {
     address public immutable token;
@@ -57,7 +58,6 @@ contract Bank is Ownable, ReentrancyGuard {
      *  @dev Deposit requires a previous approval of the ERC20 token to be spent by this bank,
      *  it thus cannot be called directly but after the approval in a previous transaction
      */
-
     function deposit(uint256 _amount) external nonReentrant {
         require(block.timestamp < t0 + T, "Deposit period has passed");
         IERC20(token).transferFrom(msg.sender, address(this), _amount);

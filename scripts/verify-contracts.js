@@ -1,7 +1,7 @@
 const { verify } = require("../utils/verify");
 
-wizardAddress = "0x609fB1523F468e6d4e0Cd7B0F9DcCcc6E4a0B62c";
-bankAddress = "0xC3476d21cb44914C3AB457F4BB2F47841024bd65";
+wizardAddress = "0xA3048A8e2aabbdCe7A47685B8991EE58EeCeE47f";
+bankAddress = "0x4B146B7AFcF4f5D74faedb71d6Ab41A7FF5ECa9e";
 reward = ethers.utils.parseEther("10000");
 interval = "86400"; //24h
 bankArgs = [wizardAddress, reward, interval];

@@ -114,14 +114,16 @@ yarn test-localhost
 
 Both the _Bank_ and the _Wizard_ (ERC20 token) contracts have been already deployed and verified on Rinkebyscan at:
 
-- Bank: `0xC3476d21cb44914C3AB457F4BB2F47841024bd65`
-- Wizard: `0x609fB1523F468e6d4e0Cd7B0F9DcCcc6E4a0B62c`
+- Bank: `0x4B146B7AFcF4f5D74faedb71d6Ab41A7FF5ECa9e`
+- Wizard: `0xA3048A8e2aabbdCe7A47685B8991EE58EeCeE47f`
 
 However, if you wish to deploy new contracts from your account and verify them, you can do it by running:
 
 ```
 yarn deploy-rinkeby
 ```
+
+To verify, first you will need to update the contract addresses in _scripts/verify-contract.js_ and then run:
 
 ```
 yarn verify

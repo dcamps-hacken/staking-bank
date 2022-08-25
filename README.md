@@ -61,7 +61,7 @@ git clone https://github.com/fields93/tracelabs.git
 
 ### Networks
 
-This project can run in: <br>
+This project can run on: <br>
 🥇Hardhat Network <br>
 🥈Hardhat Localhost Testnet <br>
 🥉Ethereum Rinkeby Testnet <br>

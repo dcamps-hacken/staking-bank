@@ -56,7 +56,7 @@ If no user waits for the third unlock to withdraw their tokens, the remaining to
 Download the Hardhat repo and play around with tests, tasks or your own scripts:
 
 ```
-git clone https://github.com/fields93/tracelabs.git
+git clone https://github.com/fields93/staking-bank.git
 ```
 
 ### Networks
